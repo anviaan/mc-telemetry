@@ -48,19 +48,19 @@ def create_mod():
     data = request.get_json()
 
     if not verify_password(data):
-        return jsonify({"error": "Contraseña incorrecta"}), 403
+        return jsonify({"error": "Incorrect password"}), 403
 
     if not all(k in data for k in ("mod_id", "mod_name")):
-        return jsonify({"error": "Faltan datos"}), 400
+        return jsonify({"error": "Missing data"}), 400
 
     if Mod.query.filter_by(mod_id=data['mod_id']).first():
-        return jsonify({"error": "El mod ya existe"}), 400
+        return jsonify({"error": "Mod already exists"}), 400
 
     mod = Mod(mod_id=data['mod_id'], mod_name=data['mod_name'])
     db.session.add(mod)
     db.session.commit()
 
-    return jsonify({"message": "Mod creado con éxito"}), 201
+    return jsonify({"message": "Mod created successfully"}), 201
 
 
 @app.route('/telemetry', methods=['POST'])
@@ -68,11 +68,11 @@ def receive_telemetry():
     data = request.get_json()
 
     if not all(k in data for k in ("game_version", "mod_id", "mod_version")):
-        return jsonify({"error": "Faltan datos"}), 400
+        return jsonify({"error": "Missing data"}), 400
 
     mod = Mod.query.filter_by(mod_id=data['mod_id']).first()
     if not mod:
-        return jsonify({"error": "El mod no existe"}), 404
+        return jsonify({"error": "Mod does not exist"}), 404
 
     telemetry = Telemetry(
         game_version=data['game_version'],
@@ -83,14 +83,14 @@ def receive_telemetry():
     db.session.add(telemetry)
     db.session.commit()
 
-    return jsonify({"message": "Datos guardados con éxito"}), 201
+    return jsonify({"message": "Data saved successfully"}), 201
 
 
 @app.route('/statistics/mods', methods=['GET'])
 def get_most_used_mods():
     password = request.args.get('password')
     if password != PASSWORD:
-        return jsonify({"error": "Contraseña incorrecta"}), 403
+        return jsonify({"error": "Incorrect password"}), 403
 
     results = db.session.query(Mod.mod_name, db.func.count(Telemetry.id).label('usage')) \
         .join(Telemetry, Mod.id == Telemetry.mod_id) \
@@ -105,11 +105,11 @@ def get_most_used_mods():
 def get_most_used_mod_versions(mod_id):
     password = request.args.get('password')
     if password != PASSWORD:
-        return jsonify({"error": "Contraseña incorrecta"}), 403
+        return jsonify({"error": "Incorrect password"}), 403
 
     mod = Mod.query.filter_by(mod_id=mod_id).first()
     if not mod:
-        return jsonify({"error": "El mod no existe"}), 404
+        return jsonify({"error": "Mod does not exist"}), 404
 
     results = db.session.query(Telemetry.mod_version, Telemetry.game_version,
                                db.func.count(Telemetry.mod_version).label('usage')) \
@@ -125,7 +125,7 @@ def get_most_used_mod_versions(mod_id):
 def get_most_used_game_versions():
     password = request.args.get('password')
     if password != PASSWORD:
-        return jsonify({"error": "Contraseña incorrecta"}), 403
+        return jsonify({"error": "Incorrect password"}), 403
 
     results = db.session.query(Telemetry.game_version, db.func.count(Telemetry.game_version).label('usage')) \
         .group_by(Telemetry.game_version) \
@@ -139,7 +139,7 @@ def get_most_used_game_versions():
 def export_to_csv():
     password = request.args.get('password')
     if password != PASSWORD:
-        return jsonify({"error": "Contraseña incorrecta"}), 403
+        return jsonify({"error": "Incorrect password"}), 403
 
     filename = "telemetry_data.csv"
     with open(filename, mode='w', newline='', encoding='utf-8') as file:
