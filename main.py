@@ -43,6 +43,11 @@ def verify_password(data):
     return True
 
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "Service is up and running"}), 200
+
+
 @app.route('/mods', methods=['POST'])
 def create_mod():
     data = request.get_json()
