@@ -43,12 +43,12 @@ def verify_password(data):
     return True
 
 
-@app.route('/health', methods=['GET'])
+@app.route('/telemetry/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "Service is up and running"}), 200
 
 
-@app.route('/mods', methods=['POST'])
+@app.route('/telemetry/mods', methods=['POST'])
 def create_mod():
     data = request.get_json()
 
@@ -68,7 +68,7 @@ def create_mod():
     return jsonify({"message": "Mod created successfully"}), 201
 
 
-@app.route('/telemetry', methods=['POST'])
+@app.route('/telemetry/data', methods=['POST'])
 def receive_telemetry():
     data = request.get_json()
 
@@ -91,7 +91,7 @@ def receive_telemetry():
     return jsonify({"message": "Data saved successfully"}), 201
 
 
-@app.route('/statistics/mods', methods=['GET'])
+@app.route('/telemetry/statistics/mods', methods=['GET'])
 def get_most_used_mods():
     password = request.args.get('password')
     if password != PASSWORD:
@@ -106,7 +106,7 @@ def get_most_used_mods():
     return jsonify({"mods": [{"mod_name": r[0], "usage": r[1]} for r in results]}), 200
 
 
-@app.route('/statistics/mod_versions/<mod_id>', methods=['GET'])
+@app.route('/telemetry/statistics/mod_versions/<mod_id>', methods=['GET'])
 def get_most_used_mod_versions(mod_id):
     password = request.args.get('password')
     if password != PASSWORD:
@@ -126,7 +126,7 @@ def get_most_used_mod_versions(mod_id):
     return jsonify({"mod_versions": [{"mod_version": r[0], "game_version": r[1], "usage": r[2]} for r in results]}), 200
 
 
-@app.route('/statistics/game_versions', methods=['GET'])
+@app.route('/telemetry/statistics/game_versions', methods=['GET'])
 def get_most_used_game_versions():
     password = request.args.get('password')
     if password != PASSWORD:
@@ -140,7 +140,7 @@ def get_most_used_game_versions():
     return jsonify({"game_versions": [{"game_version": r[0], "usage": r[1]} for r in results]}), 200
 
 
-@app.route('/export/csv', methods=['GET'])
+@app.route('/telemetry/export/csv', methods=['GET'])
 def export_to_csv():
     password = request.args.get('password')
     if password != PASSWORD:
