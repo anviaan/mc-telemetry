@@ -31,7 +31,7 @@ telemetry data, and retrieve statistics about mod and game version usage.
 
 5. Run the application:
     ```sh
-    python main.py
+    python app.py
     ```
 
 ## Usage
