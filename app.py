@@ -48,6 +48,12 @@ def health_check():
     return jsonify({"status": "Service is up and running"}), 200
 
 
+@app.route('/telemetry/mods', methods=['GET'])
+def get_mods():
+    mods = Mod.query.all()
+    return jsonify({"mods": [{"mod_id": mod.mod_id, "mod_name": mod.mod_name} for mod in mods]}), 200
+
+
 @app.route('/telemetry/mods', methods=['POST'])
 def create_mod():
     data = request.get_json()
