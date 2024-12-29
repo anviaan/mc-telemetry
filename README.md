@@ -38,9 +38,19 @@ telemetry data, and retrieve statistics about mod and game version usage.
 
 The API provides the following endpoints:
 
+### Check API Status
+
+- **URL:** `/telemetry/health`
+- **Method:** `GET`
+
+### Get All Mods
+
+- **URL:** `/telemetry/mods`
+- **Method:** `GET`
+
 ### Create a Mod
 
-- **URL:** `/mods`
+- **URL:** `/telemetry/mods`
 - **Method:** `POST`
 - **Body:**
     ```json
@@ -59,7 +69,7 @@ The API provides the following endpoints:
 
 ### Receive Telemetry Data
 
-- **URL:** `/telemetry`
+- **URL:** `/telemetry/data`
 - **Method:** `POST`
 - **Body:**
     ```json
@@ -78,7 +88,7 @@ The API provides the following endpoints:
 
 ### Get Most Used Mods
 
-- **URL:** `/statistics/mods`
+- **URL:** `/telemetry/statistics/mods`
 - **Method:** `GET`
 - **Query Parameters:** `password`
 - **Response:**
@@ -95,7 +105,7 @@ The API provides the following endpoints:
 
 ### Get Most Used Mod Versions
 
-- **URL:** `/statistics/mod_versions/<mod_id>`
+- **URL:** `/telemetry/statistics/mod_versions/<mod_id>`
 - **Method:** `GET`
 - **Query Parameters:** `password`
 - **Response:**
@@ -113,7 +123,7 @@ The API provides the following endpoints:
 
 ### Get Most Used Game Versions
 
-- **URL:** `/statistics/game_versions`
+- **URL:** `/telemetry/statistics/game_versions`
 - **Method:** `GET`
 - **Query Parameters:** `password`
 - **Response:**
@@ -130,7 +140,7 @@ The API provides the following endpoints:
 
 ### Export Telemetry Data to CSV
 
-- **URL:** `/export/csv`
+- **URL:** `/telemetry/export/csv`
 - **Method:** `GET`
 - **Query Parameters:** `password`
 - **Response:** CSV file download
