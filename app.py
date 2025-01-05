@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_file
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
 load_dotenv()
@@ -13,6 +14,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///telemetry.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 PASSWORD = os.getenv('PASSWORD')
 
@@ -29,6 +31,7 @@ class Telemetry(db.Model):
     mod_id = db.Column(db.Integer, db.ForeignKey('mod.id'), nullable=False)
     game_version = db.Column(db.String(10), nullable=False)
     mod_version = db.Column(db.String(10), nullable=False)
+    loader = db.Column(db.String(25), nullable=False)
     usage_date = db.Column(db.Date, default=lambda: datetime.now(timezone.utc).date())
 
 
@@ -78,7 +81,7 @@ def create_mod():
 def receive_telemetry():
     data = request.get_json()
 
-    if not all(k in data for k in ("game_version", "mod_id", "mod_version")):
+    if not all(k in data for k in ("game_version", "mod_id", "mod_version", "loader")):
         return jsonify({"error": "Missing data"}), 400
 
     mod = Mod.query.filter_by(mod_id=data['mod_id']).first()
@@ -89,7 +92,8 @@ def receive_telemetry():
         game_version=data['game_version'],
         mod_version=data['mod_version'],
         mod_id=mod.id,
-        usage_date=datetime.now(timezone.utc)
+        usage_date=datetime.now(timezone.utc),
+        loader=data['loader']
     )
     db.session.add(telemetry)
     db.session.commit()
@@ -122,14 +126,14 @@ def get_most_used_mod_versions(mod_id):
     if not mod:
         return jsonify({"error": "Mod does not exist"}), 404
 
-    results = db.session.query(Telemetry.mod_version, Telemetry.game_version,
+    results = db.session.query(Telemetry.mod_version, Telemetry.game_version, Telemetry.loader,
                                db.func.count(Telemetry.mod_version).label('usage')) \
         .filter(Telemetry.mod_id == mod.id) \
-        .group_by(Telemetry.mod_version, Telemetry.game_version) \
+        .group_by(Telemetry.mod_version, Telemetry.game_version, Telemetry.loader) \
         .order_by(db.desc('usage')) \
         .all()
 
-    return jsonify({"mod_versions": [{"mod_version": r[0], "game_version": r[1], "usage": r[2]} for r in results]}), 200
+    return jsonify({"mod_versions": [{"mod_version": r[0], "game_version": r[1], "loader": r[2], "usage": r[3]} for r in results]}), 200
 
 
 @app.route('/telemetry/statistics/game_versions', methods=['GET'])
@@ -155,18 +159,19 @@ def export_to_csv():
     filename = "telemetry_data.csv"
     with open(filename, mode='w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file, delimiter=';')
-        writer.writerow(["id", "game_version", "mod_id", "mod_version", "usage_date"])
+        writer.writerow(["id", "game_version", "mod_id", "mod_version", "usage_date", "loader"])
         for telemetry in Telemetry.query.all():
             writer.writerow([
                 telemetry.id,
                 telemetry.game_version,
                 Mod.query.get(telemetry.mod_id).mod_id,
                 telemetry.mod_version,
-                telemetry.usage_date.strftime('%Y-%m-%d')
+                telemetry.usage_date.strftime('%Y-%m-%d'),
+                telemetry.loader
             ])
 
     return send_file(filename, as_attachment=True, download_name=filename)
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
