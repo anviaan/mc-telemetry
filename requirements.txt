@@ -3,3 +3,4 @@ flask_sqlalchemy
 python-dotenv
 gunicorn
 Werkzeug
+flask-migrate
