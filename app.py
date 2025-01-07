@@ -3,7 +3,7 @@ import os
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
@@ -44,6 +44,11 @@ def verify_password(data):
     if 'password' not in data or data['password'] != PASSWORD:
         return False
     return True
+
+
+@app.route('/telemetry', methods=['GET'])
+def index():
+    return send_from_directory('static', 'index.html')
 
 
 @app.route('/telemetry/health', methods=['GET'])
@@ -133,7 +138,8 @@ def get_most_used_mod_versions(mod_id):
         .order_by(db.desc('usage')) \
         .all()
 
-    return jsonify({"mod_versions": [{"mod_version": r[0], "game_version": r[1], "loader": r[2], "usage": r[3]} for r in results]}), 200
+    return jsonify({"mod_versions": [{"mod_version": r[0], "game_version": r[1], "loader": r[2], "usage": r[3]} for r in
+                                     results]}), 200
 
 
 @app.route('/telemetry/statistics/game_versions', methods=['GET'])
@@ -174,4 +180,4 @@ def export_to_csv():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
