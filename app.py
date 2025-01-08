@@ -106,56 +106,6 @@ def receive_telemetry():
     return jsonify({"message": "Data saved successfully"}), 201
 
 
-@app.route('/telemetry/statistics/mods', methods=['GET'])
-def get_most_used_mods():
-    password = request.args.get('password')
-    if password != PASSWORD:
-        return jsonify({"error": "Incorrect password"}), 403
-
-    results = db.session.query(Mod.mod_name, db.func.count(Telemetry.id).label('usage')) \
-        .join(Telemetry, Mod.id == Telemetry.mod_id) \
-        .group_by(Mod.mod_name) \
-        .order_by(db.desc('usage')) \
-        .all()
-
-    return jsonify({"mods": [{"mod_name": r[0], "usage": r[1]} for r in results]}), 200
-
-
-@app.route('/telemetry/statistics/mod_versions/<mod_id>', methods=['GET'])
-def get_most_used_mod_versions(mod_id):
-    password = request.args.get('password')
-    if password != PASSWORD:
-        return jsonify({"error": "Incorrect password"}), 403
-
-    mod = Mod.query.filter_by(mod_id=mod_id).first()
-    if not mod:
-        return jsonify({"error": "Mod does not exist"}), 404
-
-    results = db.session.query(Telemetry.mod_version, Telemetry.game_version, Telemetry.loader,
-                               db.func.count(Telemetry.mod_version).label('usage')) \
-        .filter(Telemetry.mod_id == mod.id) \
-        .group_by(Telemetry.mod_version, Telemetry.game_version, Telemetry.loader) \
-        .order_by(db.desc('usage')) \
-        .all()
-
-    return jsonify({"mod_versions": [{"mod_version": r[0], "game_version": r[1], "loader": r[2], "usage": r[3]} for r in
-                                     results]}), 200
-
-
-@app.route('/telemetry/statistics/game_versions', methods=['GET'])
-def get_most_used_game_versions():
-    password = request.args.get('password')
-    if password != PASSWORD:
-        return jsonify({"error": "Incorrect password"}), 403
-
-    results = db.session.query(Telemetry.game_version, db.func.count(Telemetry.game_version).label('usage')) \
-        .group_by(Telemetry.game_version) \
-        .order_by(db.desc('usage')) \
-        .all()
-
-    return jsonify({"game_versions": [{"game_version": r[0], "usage": r[1]} for r in results]}), 200
-
-
 @app.route('/telemetry/export/csv', methods=['GET'])
 def export_to_csv():
     password = request.args.get('password')
@@ -172,8 +122,8 @@ def export_to_csv():
                 telemetry.game_version,
                 Mod.query.get(telemetry.mod_id).mod_id,
                 telemetry.mod_version,
-                telemetry.usage_date.strftime('%Y-%m-%d'),
-                telemetry.loader
+                telemetry.loader,
+                telemetry.usage_date.strftime('%Y-%m-%d')
             ])
 
     return send_file(filename, as_attachment=True, download_name=filename)
