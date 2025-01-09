@@ -115,7 +115,7 @@ def export_to_csv():
     filename = "telemetry_data.csv"
     with open(filename, mode='w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
-        writer.writerow(["id", "game_version", "mod_id", "mod_version", "usage_date", "loader"])
+        writer.writerow(["id", "game_version", "mod_id", "mod_version", "loader", "usage_date"])
         for telemetry in Telemetry.query.all():
             writer.writerow([
                 telemetry.id,
