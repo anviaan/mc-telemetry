@@ -76,65 +76,14 @@ The API provides the following endpoints:
     {
         "mod_id": "mod123",
         "game_version": "1.0",
-        "mod_version": "1.0"
+        "mod_version": "1.0",
+        "loader": "Forge"
     }
     ```
 - **Response:**
     ```json
     {
         "message": "Data saved successfully"
-    }
-    ```
-
-### Get Most Used Mods
-
-- **URL:** `/telemetry/statistics/mods`
-- **Method:** `GET`
-- **Query Parameters:** `password`
-- **Response:**
-    ```json
-    {
-        "mods": [
-            {
-                "mod_name": "Example Mod",
-                "usage": 10
-            }
-        ]
-    }
-    ```
-
-### Get Most Used Mod Versions
-
-- **URL:** `/telemetry/statistics/mod_versions/<mod_id>`
-- **Method:** `GET`
-- **Query Parameters:** `password`
-- **Response:**
-    ```json
-    {
-        "mod_versions": [
-            {
-                "mod_version": "1.0",
-                "game_version": "1.0",
-                "usage": 5
-            }
-        ]
-    }
-    ```
-
-### Get Most Used Game Versions
-
-- **URL:** `/telemetry/statistics/game_versions`
-- **Method:** `GET`
-- **Query Parameters:** `password`
-- **Response:**
-    ```json
-    {
-        "game_versions": [
-            {
-                "game_version": "1.0",
-                "usage": 10
-            }
-        ]
     }
     ```
 
