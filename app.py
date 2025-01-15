@@ -10,7 +10,12 @@ from flask_sqlalchemy import SQLAlchemy
 load_dotenv()
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///telemetry.db'
+username = os.getenv('MYSQL_USERNAME')
+password = os.getenv('MYSQL_PASSWORD')
+host = os.getenv('MYSQL_HOST')
+port = os.getenv('MYSQL_PORT')
+database = os.getenv('MYSQL_DATABASE')
+app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+mysqlconnector://{username}:{password}@{host}:{port}/{database}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -35,7 +40,6 @@ class Telemetry(db.Model):
     usage_date = db.Column(db.Date, default=lambda: datetime.now(timezone.utc).date())
 
 
-# Crear las tablas
 with app.app_context():
     db.create_all()
 

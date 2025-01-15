@@ -4,3 +4,4 @@ python-dotenv
 gunicorn
 Werkzeug
 flask-migrate
+mysql-connector-python
