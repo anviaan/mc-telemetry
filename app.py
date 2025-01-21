@@ -10,19 +10,18 @@ from flask_sqlalchemy import SQLAlchemy
 load_dotenv()
 
 app = Flask(__name__)
-username = os.getenv('MYSQL_USERNAME')
-password = os.getenv('MYSQL_PASSWORD')
-host = os.getenv('MYSQL_HOST')
-port = os.getenv('MYSQL_PORT')
-database = os.getenv('MYSQL_DATABASE')
+username = os.getenv('MYSQL_USERNAME', 'root')
+password = os.getenv('MYSQL_PASSWORD', 'root')
+host = os.getenv('MYSQL_HOST', 'localhost')
+port = os.getenv('MYSQL_PORT', '3306')
+database = os.getenv('MYSQL_DATABASE', 'mc-telemetry')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+mysqlconnector://{username}:{password}@{host}:{port}/{database}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-PASSWORD = os.getenv('PASSWORD')
-
+PASSWORD = os.getenv('PASSWORD', 'password')
 
 class Mod(db.Model):
     id = db.Column(db.Integer, primary_key=True)
