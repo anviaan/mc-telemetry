@@ -70,7 +70,7 @@ jobs:
           name: python-app
 
       - name: Unzip artifact for deployment
-        run: unzip release.zip
+        run: unzip -o release.zip
 
       - name: Show debug information
         run: cat debug.txt
