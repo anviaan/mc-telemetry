@@ -2,7 +2,7 @@ import csv
 import os
 from datetime import datetime, timezone
 from functools import wraps
-from typing import Dict, Any
+from typing import Dict, Any, Callable
 
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_file, send_from_directory, Response, after_this_request
@@ -11,7 +11,6 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
@@ -43,7 +42,6 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 
-# Models with improved validation and relationships
 class Mod(db.Model):
     __tablename__ = 'mods'
 
@@ -99,7 +97,6 @@ def handle_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
 
-# Routes with improved error handling and responses
 @app.route('/telemetry', methods=['GET'])
 def index() -> Response:
     return send_from_directory('static', 'index.html')
@@ -183,26 +180,68 @@ def receive_telemetry() -> tuple[Response, int]:
 
 
 @app.route('/telemetry/export/csv', methods=['GET'])
-def export_to_csv():
-    password = request.args.get('password')
-    if password != PASSWORD:
-        return jsonify({"error": "Incorrect password"}), 403
+@require_password
+def export_to_csv() -> Response | tuple[Response, int]:
+    temp_file = None
+    try:
+        filename = f"telemetry_data_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.csv"
+        temp_dir = os.path.join(os.getcwd(), 'temp')
+        os.makedirs(temp_dir, exist_ok=True)
+        temp_file = os.path.join(temp_dir, filename)
 
-    filename = "telemetry_data.csv"
-    with open(filename, mode='w', newline='', encoding='utf-8') as file:
-        writer = csv.writer(file)
-        writer.writerow(["id", "game_version", "mod_id", "mod_version", "loader", "usage_date"])
-        for telemetry in Telemetry.query.all():
+        with open(temp_file, mode='w', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
             writer.writerow([
-                telemetry.id,
-                telemetry.game_version,
-                Mod.query.get(telemetry.mod_id).mod_id,
-                telemetry.mod_version,
-                telemetry.loader,
-                telemetry.usage_date.strftime('%Y-%m-%d')
+                "id", "game_version", "mod_id", "mod_name",
+                "mod_version", "loader", "usage_date"
             ])
 
-    return send_file(filename, as_attachment=True, download_name=filename)
+            telemetry_data = db.session.query(
+                Telemetry, Mod
+            ).join(Mod).all()
+
+            for telemetry, mod in telemetry_data:
+                writer.writerow([
+                    telemetry.id,
+                    telemetry.game_version,
+                    mod.mod_id,
+                    mod.mod_name,
+                    telemetry.mod_version,
+                    telemetry.loader,
+                    telemetry.usage_date.strftime('%Y-%m-%d %H:%M:%S')
+                ])
+
+        response = send_file(
+            temp_file,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='text/csv'
+        )
+
+        # Add headers to prevent caching
+        response.headers['Cache-Control'] = 'no-cache'
+        response.headers['X-Accel-Buffering'] = 'no'
+
+        # Register a callback to delete the file after sending
+        @response.call_on_close
+        def cleanup():
+            if os.path.exists(temp_file):
+                try:
+                    os.remove(temp_file)
+                except OSError:
+                    app.logger.error(f"Failed to remove temporary file: {temp_file}")
+
+        return response
+
+    except Exception as e:
+        # Clean up the file if there's an error
+        if temp_file and os.path.exists(temp_file):
+            try:
+                os.remove(temp_file)
+            except OSError:
+                pass  # Ignore errors during cleanup
+        app.logger.error(f"Error exporting CSV: {e}")
+        return jsonify({'error': 'Failed to export data'}), 500
 
 
 if __name__ == '__main__':
