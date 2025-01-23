@@ -1,7 +1,9 @@
 flask
 flask_sqlalchemy
+flask-migrate
+mysql-connector-python
 python-dotenv
 gunicorn
 Werkzeug
-flask-migrate
-mysql-connector-python
+SQLAlchemy
+alembic
