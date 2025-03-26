@@ -2,10 +2,10 @@ import csv
 import os
 from datetime import datetime, timezone
 from functools import wraps
-from typing import Dict, Any, Callable
+from typing import Dict, Any
 
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, send_file, send_from_directory, Response, after_this_request
+from flask import Flask, request, jsonify, send_file, send_from_directory, Response
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
@@ -61,20 +61,19 @@ class Mod(db.Model):
 class Telemetry(db.Model):
     __tablename__ = 'telemetry'
 
-    id = db.Column(db.Integer, primary_key=True)
-    mod_id = db.Column(db.Integer, db.ForeignKey('mods.id', ondelete='CASCADE'), nullable=False)
-    game_version = db.Column(db.String(10), nullable=False, index=True)
-    mod_version = db.Column(db.String(10), nullable=False, index=True)
-    loader = db.Column(db.String(25), nullable=False)
-    usage_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    mod_id = db.Column(db.Integer, db.ForeignKey('mods.id', ondelete='CASCADE'), primary_key=True)
+    game_version = db.Column(db.String(10), primary_key=True)
+    mod_version = db.Column(db.String(10), primary_key=True)
+    loader = db.Column(db.String(25), primary_key=True)
+    count = db.Column(db.BigInteger, nullable=False, default=0)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'id': self.id,
+            'mod_id': self.mod_id,
             'game_version': self.game_version,
             'mod_version': self.mod_version,
             'loader': self.loader,
-            'usage_date': self.usage_date.isoformat()
+            'count': self.count
         }
 
 
@@ -160,13 +159,25 @@ def receive_telemetry() -> tuple[Response, int]:
         if not mod:
             return jsonify({'error': 'Mod not found'}), 404
 
-        telemetry = Telemetry(
+        telemetry = Telemetry.query.filter_by(
             game_version=data['game_version'],
             mod_version=data['mod_version'],
             mod_id=mod.id,
             loader=data['loader']
-        )
-        db.session.add(telemetry)
+        ).first()
+
+        if telemetry:
+            telemetry.count += 1
+        else:
+            telemetry = Telemetry(
+                game_version=data['game_version'],
+                mod_version=data['mod_version'],
+                mod_id=mod.id,
+                loader=data['loader'],
+                count=1
+            )
+            db.session.add(telemetry)
+
         db.session.commit()
 
         return jsonify({
@@ -192,23 +203,18 @@ def export_to_csv() -> Response | tuple[Response, int]:
         with open(temp_file, mode='w', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
             writer.writerow([
-                "id", "game_version", "mod_id", "mod_name",
-                "mod_version", "loader", "usage_date"
+                "mod_id", "game_version", "mod_version", "loader", "count"
             ])
 
-            telemetry_data = db.session.query(
-                Telemetry, Mod
-            ).join(Mod).all()
+            telemetry_data = Telemetry.query.all()
 
-            for telemetry, mod in telemetry_data:
+            for telemetry in telemetry_data:
                 writer.writerow([
-                    telemetry.id,
+                    telemetry.mod_id,
                     telemetry.game_version,
-                    mod.mod_id,
-                    mod.mod_name,
                     telemetry.mod_version,
                     telemetry.loader,
-                    telemetry.usage_date.strftime('%Y-%m-%d %H:%M:%S')
+                    telemetry.count
                 ])
 
         response = send_file(
